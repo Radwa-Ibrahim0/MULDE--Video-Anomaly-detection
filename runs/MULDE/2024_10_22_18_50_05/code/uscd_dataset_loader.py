@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import tifffile as tiff
-import re 
+import re  # For parsing the .m file
 
 def parse_ground_truth_m_file(m_file_path):
     """
@@ -27,10 +27,8 @@ def parse_ground_truth_m_file(m_file_path):
                     gt_frames = list(range(start, end + 1))  # Inclusive range
                     TestVideoFile.append({'gt_frame': gt_frames})
     except FileNotFoundError:
-    	# this is for debugging purpose
         print(f"Error: The file {m_file_path} was not found.")
     except Exception as e:
-    	# load the ground truth 
         print(f"An error occurred while parsing the .m file: {e}")
 
     return TestVideoFile
