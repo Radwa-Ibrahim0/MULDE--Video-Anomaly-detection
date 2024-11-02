@@ -29,7 +29,7 @@ from tqdm import tqdm
 from sklearn import mixture
 import matplotlib.pyplot as plt
 from uscd_dataset_loader import get_dataset, create_meshgrid_from_data
-torch.cuda.empty_cache() # uncomment this if you have GPU on your device
+# torch.cuda.empty_cache() # uncomment this if you have GPU on your device
 import plotting_utils
 
 figsize = (7, 7)
@@ -234,7 +234,7 @@ def train_and_evaluate(args):
                         model.zero_grad()
 
                         
-                        sigma_cpu_new = torch.tensor(sigma_).cpu()
+                        sigma_cpu_new = sigma_.cpu()
                         lambda_factor_updated = (sigma_cpu_new ** 2) * np.exp(-((sigma_cpu_new - sigma_0_cpu) ** 2) / (2 * sigma_spread_cpu ** 2))
                         lambda_factor = lambda_factor_updated.ravel() # this is a scalar
                         score_, log_density_ = model.score(torch.hstack([x, sigma_ * torch.ones((x.shape[0], 1), device=x.device)]), return_log_density=True)  # evaluate clean sample at noise scale sigma_
@@ -399,7 +399,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment_name", type=str, default="MULDE")
     # in below section change default to "cuda" for changing device to GPU
-    parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--epochs", type=int, default=500, help='')
     parser.add_argument("--lr", type=float, default=5e-4, help='')
     parser.add_argument("--batch_size", type=int, default=2048, help='')

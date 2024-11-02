@@ -29,7 +29,7 @@ from tqdm import tqdm
 from sklearn import mixture
 import matplotlib.pyplot as plt
 from uscd_dataset_loader import get_dataset, create_meshgrid_from_data
-torch.cuda.empty_cache() # uncomment this if you have GPU on your device
+# torch.cuda.empty_cache() # uncomment this if you have GPU on your device
 import plotting_utils
 
 figsize = (7, 7)
@@ -399,7 +399,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment_name", type=str, default="MULDE")
     # in below section change default to "cuda" for changing device to GPU
-    parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--epochs", type=int, default=500, help='')
     parser.add_argument("--lr", type=float, default=5e-4, help='')
     parser.add_argument("--batch_size", type=int, default=2048, help='')
