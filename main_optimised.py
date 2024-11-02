@@ -149,7 +149,7 @@ def train_and_evaluate(args):
                 
                 sigma_cpu = sigma.cpu()
                 lambda_factor_updated = (sigma_cpu ** 2) * np.exp(-((sigma_cpu - sigma_0_cpu) ** 2) / (2 * sigma_spread_cpu ** 2))
-                lambda_factor = lambda_factor_updated.ravel()
+                lambda_factor = lambda_factor_updated.ravel().to(args.device)
                 score_, log_density_ = model.score(torch.hstack([x_, sigma]), return_log_density=True)  # stack noisy data and sigma (conditioning)
                 loss = torch.norm(score_[:, :-1] + noise / (sigma ** 2), dim=-1) ** 2  # -1 for excluding noise dim sigma condition
 
@@ -236,7 +236,7 @@ def train_and_evaluate(args):
                         
                         sigma_cpu_new = torch.tensor(sigma_).cpu()
                         lambda_factor_updated = (sigma_cpu_new ** 2) * np.exp(-((sigma_cpu_new - sigma_0_cpu) ** 2) / (2 * sigma_spread_cpu ** 2))
-                        lambda_factor = lambda_factor_updated.ravel() # this is a scalar
+                        lambda_factor = lambda_factor_updated.ravel().to(args.device) # this is a scalar
                         score_, log_density_ = model.score(torch.hstack([x, sigma_ * torch.ones((x.shape[0], 1), device=x.device)]), return_log_density=True)  # evaluate clean sample at noise scale sigma_
                         score_squared_norms = (torch.norm(score_[:, :-1], dim=1) ** 2)
                         anomaly_scores[log_density_id] += log_density_.ravel().tolist()
