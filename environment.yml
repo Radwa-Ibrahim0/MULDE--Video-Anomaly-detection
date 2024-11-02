@@ -128,6 +128,7 @@ dependencies:
     - tensorboard==2.14.0
     - tensorboard-data-server==0.7.2
     - threadpoolctl==3.5.0
+    - tifffile==2023.7.10
     - tqdm==4.66.4
     - werkzeug==3.0.3
     - zipp==3.19.1
