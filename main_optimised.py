@@ -398,7 +398,7 @@ def train_and_evaluate(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment_name", type=str, default="MULDE")
-    # in below section change default to "cuda" for changing device to GPU
+    # in below section change default to "cuda:0" for changing device to GPU
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--epochs", type=int, default=500, help='')
     parser.add_argument("--lr", type=float, default=5e-4, help='')
