@@ -36,6 +36,10 @@ figsize = (7, 7)
 edgecolors = None
 linewidths = 1.
 marker = "x"
+sigma_0 = torch.tensor(0.33)
+sigma_spread = torch.tensor(0.075)
+sigma_0_cpu = sigma_0.cpu()
+sigma_spread_cpu = sigma_spread.cpu()
 # colors = ['green', 'white', 'red']
 # colors = ['blue', 'white', 'yellow']
 # positions = [0, 0.5, 1]
@@ -43,7 +47,8 @@ marker = "x"
 # cmap_mesh = LinearSegmentedColormap.from_list('CustomRedWhiteGreen', list(zip(positions, colors)))
 cmap_mesh = "viridis"  # "coolwarm"
 data_dir = "UCSD_Anomaly_Dataset.v1p2/UCSDped2"
-m_file_path = "UCSD_Anomaly_Dataset.v1p2/UCSDped2/Test/UCSDped2.m" 
+m_file_path = "UCSD_Anomaly_Dataset.v1p2/UCSDped2/Test/UCSDped2.m"
+
 def train_and_evaluate(args):
     # zeros are normal, ones are anomalous
     data_train, labels_train, data_test, labels_test, id_to_type = get_dataset(data_dir,m_file_path)
@@ -134,14 +139,17 @@ def train_and_evaluate(args):
 
                 ###########
                 # sample sigma
-                sigma = torch.Tensor(10 ** (np.random.normal(log_mean, log_std, x.size(0)))).unsqueeze(1).to(args.device)
+                sigma = torch.Tensor(np.exp(np.random.uniform(np.log(args.sigma_low), np.log(args.sigma_high), x.size(0)))).unsqueeze(1).to(args.device)
+
                 # sample noise
                 noise = torch.randn_like(x, device=args.device) * sigma  # scale N(0, I) with sigma -> N(0, sigma I)
 
                 x = x.requires_grad_()
                 x_ = x + noise  # add noise to data
-
-                lambda_factor = (sigma ** 2).ravel()
+                
+                sigma_cpu = sigma.cpu()
+                lambda_factor_updated = (sigma_cpu ** 2) * np.exp(-((sigma_cpu - sigma_0_cpu) ** 2) / (2 * sigma_spread_cpu ** 2))
+                lambda_factor = lambda_factor_updated.ravel().to(args.device)
                 score_, log_density_ = model.score(torch.hstack([x_, sigma]), return_log_density=True)  # stack noisy data and sigma (conditioning)
                 loss = torch.norm(score_[:, :-1] + noise / (sigma ** 2), dim=-1) ** 2  # -1 for excluding noise dim sigma condition
 
@@ -224,7 +232,11 @@ def train_and_evaluate(args):
                         score_id, log_density_id = f"score_norm_{sigma_}", f"log_density_{sigma_}" #, f"gibbs_boltzmann_{sigma_}"
 
                         model.zero_grad()
-                        lambda_factor = sigma_ ** 2  # this is a scalar
+
+                        
+                        sigma_cpu_new = torch.tensor(sigma_).cpu()
+                        lambda_factor_updated = (sigma_cpu_new ** 2) * np.exp(-((sigma_cpu_new - sigma_0_cpu) ** 2) / (2 * sigma_spread_cpu ** 2))
+                        lambda_factor = lambda_factor_updated.ravel().to(args.device) # this is a scalar
                         score_, log_density_ = model.score(torch.hstack([x, sigma_ * torch.ones((x.shape[0], 1), device=x.device)]), return_log_density=True)  # evaluate clean sample at noise scale sigma_
                         score_squared_norms = (torch.norm(score_[:, :-1], dim=1) ** 2)
                         anomaly_scores[log_density_id] += log_density_.ravel().tolist()
@@ -386,14 +398,13 @@ def train_and_evaluate(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment_name", type=str, default="MULDE")
+    # in below section change default to "cuda:0" for changing device to GPU
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--epochs", type=int, default=500, help='')
     parser.add_argument("--lr", type=float, default=5e-4, help='')
     parser.add_argument("--batch_size", type=int, default=2048, help='')
     parser.add_argument('--units', nargs='+', default=[4096, 4096], help='', type=int)
     parser.add_argument('--sigma_low', type=float, default=1e-3)
-    parser.add_argument('--sigma_mean', type=float, default=0.33)
-    parser.add_argument('--std_dev', type=float, default=0.075)
     parser.add_argument('--sigma_high', type=float, default=1.)
     parser.add_argument('--plot_dataset', action='store_true')
     parser.set_defaults(plot_dataset=False)
@@ -412,10 +423,4 @@ if __name__ == '__main__':
     parser.add_argument('--beta', type=float, default=None, help="factor for regularizing log-density")
 
     args = parser.parse_args()
-
-    # Compute log_mean and log_std based on parsed arguments
-    log_mean = np.log10(args.sigma_mean)
-    log_std = args.std_dev
-
     train_and_evaluate(args)
-

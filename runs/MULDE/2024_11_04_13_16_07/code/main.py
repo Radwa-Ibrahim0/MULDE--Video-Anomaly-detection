@@ -29,7 +29,7 @@ from tqdm import tqdm
 from sklearn import mixture
 import matplotlib.pyplot as plt
 from uscd_dataset_loader import get_dataset, create_meshgrid_from_data
-torch.cuda.empty_cache() # uncomment this if you have GPU on your device
+#torch.cuda.empty_cache() # uncomment this if you have GPU on your device
 import plotting_utils
 
 figsize = (7, 7)
@@ -43,7 +43,8 @@ marker = "x"
 # cmap_mesh = LinearSegmentedColormap.from_list('CustomRedWhiteGreen', list(zip(positions, colors)))
 cmap_mesh = "viridis"  # "coolwarm"
 data_dir = "UCSD_Anomaly_Dataset.v1p2/UCSDped2"
-m_file_path = "UCSD_Anomaly_Dataset.v1p2/UCSDped2/Test/UCSDped2.m" 
+m_file_path = "UCSD_Anomaly_Dataset.v1p2/UCSDped2/Test/UCSDped2.m"
+
 def train_and_evaluate(args):
     # zeros are normal, ones are anomalous
     data_train, labels_train, data_test, labels_test, id_to_type = get_dataset(data_dir,m_file_path)
@@ -134,7 +135,8 @@ def train_and_evaluate(args):
 
                 ###########
                 # sample sigma
-                sigma = torch.Tensor(10 ** (np.random.normal(log_mean, log_std, x.size(0)))).unsqueeze(1).to(args.device)
+                sigma = torch.Tensor(np.exp(np.random.uniform(np.log(args.sigma_low), np.log(args.sigma_high), x.size(0)))).unsqueeze(1).to(args.device)
+
                 # sample noise
                 noise = torch.randn_like(x, device=args.device) * sigma  # scale N(0, I) with sigma -> N(0, sigma I)
 
@@ -386,14 +388,13 @@ def train_and_evaluate(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment_name", type=str, default="MULDE")
-    parser.add_argument("--device", type=str, default="cuda:0")
+    # in below section change default to "cuda" for changing device to GPU
+    parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--epochs", type=int, default=500, help='')
     parser.add_argument("--lr", type=float, default=5e-4, help='')
     parser.add_argument("--batch_size", type=int, default=2048, help='')
     parser.add_argument('--units', nargs='+', default=[4096, 4096], help='', type=int)
     parser.add_argument('--sigma_low', type=float, default=1e-3)
-    parser.add_argument('--sigma_mean', type=float, default=0.33)
-    parser.add_argument('--std_dev', type=float, default=0.075)
     parser.add_argument('--sigma_high', type=float, default=1.)
     parser.add_argument('--plot_dataset', action='store_true')
     parser.set_defaults(plot_dataset=False)
@@ -412,10 +413,4 @@ if __name__ == '__main__':
     parser.add_argument('--beta', type=float, default=None, help="factor for regularizing log-density")
 
     args = parser.parse_args()
-
-    # Compute log_mean and log_std based on parsed arguments
-    log_mean = np.log10(args.sigma_mean)
-    log_std = args.std_dev
-
     train_and_evaluate(args)
-
