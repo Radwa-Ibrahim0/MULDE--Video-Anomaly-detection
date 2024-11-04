@@ -29,7 +29,7 @@ from tqdm import tqdm
 from sklearn import mixture
 import matplotlib.pyplot as plt
 from uscd_dataset_loader import get_dataset, create_meshgrid_from_data
-# torch.cuda.empty_cache() # uncomment this if you have GPU on your device
+torch.cuda.empty_cache() # uncomment this if you have GPU on your device
 import plotting_utils
 
 figsize = (7, 7)
