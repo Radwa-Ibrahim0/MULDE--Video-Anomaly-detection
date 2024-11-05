@@ -49,6 +49,9 @@ max_roc_auc_score_norm_aggregate = -np.inf
 max_roc_auc_log_density_individual = -np.inf
 max_roc_auc_score_norm_individual = -np.inf
 def train_and_evaluate(args):
+    global max_roc_auc_log_density_aggregate, max_roc_auc_score_norm_aggregate
+    global max_roc_auc_log_density_individual, max_roc_auc_score_norm_individual
+    
     # zeros are normal, ones are anomalous
     data_train, labels_train, data_test, labels_test, id_to_type = get_dataset(data_dir,m_file_path)
 
