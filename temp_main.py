@@ -379,6 +379,13 @@ def train_and_evaluate(args):
                     plt.legend()
                     summary_writer.add_figure(f"{log_density_score_norm}_with_data/sigma_{sigma_}", plt.gcf(), epoch)
                     plt.close()
+    #print the result   
+    print("Final AUC-ROC Scores:")
+    print("_roc_auc_best/_best_log_density_aggregate:", best_auc_aggregate)
+    print("_roc_auc_best/_best_log_density_individual:", best_auc_roc_log_density)
+    print("_roc_auc_best/_best_score_norm_aggregate:", best_auc_aggregate)
+    print("_roc_auc_best/_best_score_norm_individual:", best_auc_roc_score_norm)
+
 
     summary_writer.flush()
 
