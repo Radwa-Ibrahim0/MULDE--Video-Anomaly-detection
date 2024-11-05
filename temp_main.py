@@ -44,6 +44,10 @@ marker = "x"
 cmap_mesh = "viridis"  # "coolwarm"
 data_dir = "UCSD_Anomaly_Dataset.v1p2/UCSDped2"
 m_file_path = "UCSD_Anomaly_Dataset.v1p2/UCSDped2/Test/UCSDped2.m" 
+max_roc_auc_log_density_aggregate = -np.inf
+max_roc_auc_score_norm_aggregate = -np.inf
+max_roc_auc_log_density_individual = -np.inf
+max_roc_auc_score_norm_individual = -np.inf
 def train_and_evaluate(args):
     # zeros are normal, ones are anomalous
     data_train, labels_train, data_test, labels_test, id_to_type = get_dataset(data_dir,m_file_path)
@@ -134,7 +138,9 @@ def train_and_evaluate(args):
 
                 ###########
                 # sample sigma
-                sigma = torch.Tensor(10 ** (np.random.normal(log_mean, log_std, x.size(0)))).unsqueeze(1).to(args.device)
+                sigma = torch.Tensor(np.clip(10 ** (np.random.normal(log_mean, log_std, x.size(0))), args.sigma_low, args.sigma_high)).unsqueeze(1).to(args.device)
+
+                # sigma = torch.Tensor(10 ** (np.random.normal(log_mean, log_std, x.size(0)))).unsqueeze(1).to(args.device)
                 # sample noise
                 noise = torch.randn_like(x, device=args.device) * sigma  # scale N(0, I) with sigma -> N(0, sigma I)
 
@@ -286,6 +292,12 @@ def train_and_evaluate(args):
                     current_auc = auc_roc_aggregate[score_type_][agg_type_]
                     if best_auc_aggregate < current_auc:
                         best_auc_aggregate = current_auc
+
+                    if score_type_ == "log_density":
+                        max_roc_auc_log_density_aggregate = max(max_roc_auc_log_density_aggregate, current_auc)
+                    elif score_type_ == "score_norm":
+                        max_roc_auc_score_norm_aggregate = max(max_roc_auc_score_norm_aggregate, current_auc)
+
                     summary_writer.add_scalar(f"roc_auc_{score_type_}_aggregate/{agg_type_}", current_auc, epoch)
 
                 summary_writer.add_scalar(f"_roc_auc_best/_best_{score_type_}_aggregate", best_auc_aggregate, epoch)
@@ -322,6 +334,10 @@ def train_and_evaluate(args):
 
                 auc_roc_log_density = roc_auc_score(labels_test, log_densities)
                 auc_roc_score_norm = roc_auc_score(labels_test, score_norms_)
+
+                # Track maximum AUC-ROC for individual sigmas
+                max_roc_auc_log_density_individual = max(max_roc_auc_log_density_individual, auc_roc_log_density)
+                max_roc_auc_score_norm_individual = max(max_roc_auc_score_norm_individual, auc_roc_score_norm)
 
                 all_auc_roc_log_density.append(auc_roc_log_density)
                 all_auc_roc_score_norm.append(auc_roc_score_norm)
@@ -380,11 +396,11 @@ def train_and_evaluate(args):
                     summary_writer.add_figure(f"{log_density_score_norm}_with_data/sigma_{sigma_}", plt.gcf(), epoch)
                     plt.close()
     #print the result   
-    print("Final AUC-ROC Scores:")
-    print("_roc_auc_best/_best_log_density_aggregate:", best_auc_aggregate)
-    print("_roc_auc_best/_best_log_density_individual:", best_auc_roc_log_density)
-    print("_roc_auc_best/_best_score_norm_aggregate:", best_auc_aggregate)
-    print("_roc_auc_best/_best_score_norm_individual:", best_auc_roc_score_norm)
+    print("Max AUC-ROC Scores During Training:")
+    print("Max _roc_auc_best/_best_log_density_aggregate:", max_roc_auc_log_density_aggregate)
+    print("Max _roc_auc_best/_best_score_norm_aggregate:", max_roc_auc_score_norm_aggregate)
+    print("Max _roc_auc_best/_best_log_density_individual:", max_roc_auc_log_density_individual)
+    print("Max _roc_auc_best/_best_score_norm_individual:", max_roc_auc_score_norm_individual)
 
 
     summary_writer.flush()
