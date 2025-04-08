@@ -390,7 +390,7 @@ if __name__ == '__main__':
     parser.add_argument("--experiment_name", type=str, default="MULDE")
     # in below section change default to "cuda" for changing device to GPU
     parser.add_argument("--device", type=str, default="cpu")
-    parser.add_argument("--epochs", type=int, default=500, help='')
+    parser.add_argument("--epochs", type=int, default=10, help='')
     parser.add_argument("--lr", type=float, default=5e-4, help='')
     parser.add_argument("--batch_size", type=int, default=2048, help='')
     parser.add_argument('--units', nargs='+', default=[4096, 4096], help='', type=int)
